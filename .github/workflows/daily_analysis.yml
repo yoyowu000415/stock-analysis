@@ -3,9 +3,10 @@ name: 每日股票分析
 on:
   # 定时触发
   schedule:
-    - cron: '30 23 * * 0-4'    # UTC 23:30 = 北京时间次日 07:30（早报）
-    - cron: '30 4 * * 1-5'     # UTC 04:30 = 北京时间 12:30
-    - cron: '30 11 * * 1-5'    # UTC 11:30 = 北京时间 19:30
+    - cron: '30 0 * * 1-5'     # UTC 00:30 = 北京时间 08:30（早报）                                                
+    - cron: '0 4 * * 1-5'      # UTC 04:00 = 北京时间 12:00（大盘复盘）                                            
+    - cron: '55 5 * * 1-5'     # UTC 05:45 = 北京时间 13:45（股票分析）                                            
+    - cron: '30 10 * * 1-5'    # UTC 10:30 = 北京时间 18:30（股票分析+大盘复盘）                                   
   
   # 手动触发
   workflow_dispatch:
@@ -239,7 +240,7 @@ jobs:
             echo "⚡ 已启用强制运行模式（跳过交易日检查）"
           fi
 
-          # 判断是否早报时段（UTC 23:00-00:00 = 北京 07:00-08:00）
+          # 获取 UTC 小时，用于判断定时触发的时段
           HOUR=$(date -u +%H)
 
           # 执行分析
@@ -249,10 +250,17 @@ jobs:
             python main.py --no-market-review $FORCE_RUN_ARG
           elif [ "$MODE" = "screener-only" ]; then
             python main.py --screener $FORCE_RUN_ARG
-          elif [ "$HOUR" = "23" ]; then
+          elif [ "$HOUR" = "00" ]; then
             echo "🌅 早报模式"
             python main.py --morning-briefing $FORCE_RUN_ARG
+          elif [ "$HOUR" = "04" ]; then                                                                           
+            echo "📈 12:00 大盘复盘"                                                                              
+            python main.py --market-review $FORCE_RUN_ARG                                                         
+          elif [ "$HOUR" = "05" ]; then                                                                           
+            echo "📊 13:45 股票分析"                                                                              
+            python main.py --no-market-review $FORCE_RUN_ARG 
           else
+            echo "🚀 18:30 完整分析（股票+大盘）"
             python main.py $FORCE_RUN_ARG
           fi
       
