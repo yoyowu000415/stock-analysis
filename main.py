@@ -224,6 +224,13 @@ def parse_arguments() -> argparse.Namespace:
         help='运行指定选股模板（模板名称）'
     )
 
+    # === Morning Briefing ===
+    parser.add_argument(
+        '--morning-briefing',
+        action='store_true',
+        help='运行早盘情报分析（隔夜美股+财经新闻+大盘预判）'
+    )
+
     return parser.parse_args()
 
 
@@ -653,7 +660,17 @@ def main() -> int:
         return 0
 
     try:
-        # 模式0a: 选股器
+        # 模式0a: 早盘情报
+        if getattr(args, 'morning_briefing', False):
+            logger.info("模式: 早盘情报")
+            from src.morning_briefing import run_morning_briefing
+            run_morning_briefing(
+                send_notification=not args.no_notify,
+                no_notify=args.no_notify,
+            )
+            return 0
+
+        # 模式0b: 选股器
         if getattr(args, 'screener', False):
             logger.info("模式: 选股器")
             run_auto_screener(config, template_name=getattr(args, 'screener_template', None))
